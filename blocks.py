@@ -1,8 +1,9 @@
 import math
 from functools import reduce 
+import numpy as np
 
 class Block:
-    """Blocks are defined by an ordered list of 2D points.
+    """Blocks are defined by an ordered array of 2D points.
     The first point should be (0,0) and the second should be (X,0) where X 
     the length of the edge connecting the first and second points.
     A square block would be represented by 4 points: [(0,0), (X,0), (X,X), (0,X)]
@@ -11,6 +12,17 @@ class Block:
     """
     def __init__(self, points):
         self.vertices = points
+        self.is_up = True
+    
+    def is_up_p(self):
+        return self.is_up
+    
+    def is_down_p(self):
+        return not self.is_up()
+    
+    def flip(self, edge):
+        self.is_up = not self.is_up
+
     def get_num_edges(self):
         return len(self.vertices)
 
@@ -48,20 +60,25 @@ class Block:
         return math.sqrt((p[0] - q[0])^2 + (p[1] - q[1])^2)
 
     @staticmethod
-    def move_and_attach(from_block, from_edge, to_block, to_edge):
-        """will move the from_block over to the to_block by attaching the from_edge
-        of the from_block to the to_edge of the to_block
+    def attach_blocks(block1, block1_edge, block2, block2_edge):
+        """ will attach two blocks by connecting them together at the specified edges
+        block1 will remain in place, and block2 will be flipped, translated and rotated as
+        necessary for the new blocks to affix to each other at the edge
+        This method will verify that the lengths of the edges are the same.
+        This method will verify that the blocks do not overlap after they are joined.
+        This method will return a new block representing the newly formed and co-joined block
 
         Args:
-            from_block ([type]): [description]
-            from_edge ([type]): [description]
-            to_block ([type]): [description]
-            to_edge ([type]): [description]
+            block1 ([type]): [description]
+            block1_edge ([type]): [description]
+            block2 ([type]): [description]
+            block2_edge ([type]): [description]
 
         Returns:
             Block: [description]
         """
         pass
+
 class Blockus :
     def __init__(self, blocks = None):
         self.blocks = set(blocks) if blocks else set()
