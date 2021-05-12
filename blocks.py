@@ -204,15 +204,6 @@ class Block:
     def merge(self, other_block):
         return other_block
 
-    # def circular_iter(arr):
-    #     alen = len(arr)
-    #     indx = alen
-    #     while True:
-    #         if indx < alen:
-    #             yield arr[indx]
-    #             indx = indx + 1
-    #         else:
-    #             indx = 0
 
     @staticmethod
     def find_shared_pts(points_a, points_b):
@@ -234,23 +225,6 @@ class Block:
         """
         shared_pts = Block.find_shared_pts(self.vertices, other_block.vertices)
 
-
-    # @staticmethod
-    # def get_iter_between_items(arr, item1, item2):
-    #     have_reached_item1 = False
-    #     INF_LOOP_GUARD = 100
-    #     for item in Block.circular_iter(arr):
-    #         if INF_LOOP_GUARD < 0:
-    #             break
-    #         else:
-    #             INF_LOOP_GUARD -= 1
-    #         if not have_reached_item1:
-    #             if item == item1:
-    #                 have_reached_item1 = True
-    #         else:
-    #             yield item
-    #             if item == item2:
-    #                 break
 
     @staticmethod
     def draw_blocks(blocks, file=sys.stdout):
@@ -292,11 +266,6 @@ class Block:
         b.vertices = b.vertices - move_delta
         return b
 
-    # @staticmethod
-    # def move_point(pt_, from_, to_):
-    #     move_delta = from_ - to_
-    #     return pt_ - move_delta
-
     def rotate(self, pivot_, from_, to_):
         b = self.copy()
         theta = Block.calc_angle(pivot_, from_, to_)
@@ -325,8 +294,87 @@ class Block:
         len_a = math.sqrt(a[0]**2 + a[1]**2)
         len_b = math.sqrt(b[0]**2 + b[1]**2)
         return math.acos(ab_dot/(len_a * len_b))
+##########################################################################
+# only functions below
 
-   
+def flip(block, edge):
+    """ flips the current block along the specified edge
+
+        this is from:  https://stackoverflow.com/a/3307181
+
+        given point (x1, y1)
+        and a reflection line passing through points (x2,y2) and (x3,y3)
+        (x4, y4) is the mirror of point (x1,y1) across this reflection line with this formula:
+        
+        (x4,y4) = (2*d - x1, 2*d*m - y1 + 2*c)
+
+        where
+        m is (y3-y2)/(x3-x2)
+        c is (x3*y2-x2*y3)/(x3-x2)
+        d = (x1 + (y1 - c)*m)/(1 + m**2)
+
+    """
+    def flip_point(edge):
+        (a,b) = edge.get_points()
+        (x2,y2) = (a[0], a[1])
+        (x3,y3) = (b[0], b[1])
+
+        m = (y3-y2)/(x3-x2)
+        c = (x3*y2-x2*y3)/(x3-x2)
+        m2 = (1 + m**2)
+
+        return lambda p: [2*((p[0] + (p[1] - c)*m)/m2) - p[0], 2*((p[0] + (p[1] - c)*m)/m2)*m - p[1] + 2*c]
+
+    flip_point_closure = flip_point(edge)
+    flipped_pts = np.array(list(map(flip_point_closure, block.vertices)))
+    return Block(flipped_pts, not block.direction)
+
+def flip2(block, a, b):
+
+    """[summary]
+    another formula from: https://youtu.be/SD_qew7vOtw
+    given a line y = ax + b
+    then a given point (x,y) will be reflected over this line to point (x',y') by applying this
+    x' = ((1-a**2)/(1+a**2))x + (2*a/(a**2 + 1))(y-b)
+    y' = (((a**2 + 1)/(a**2 + 1)))*(y-b) + ((2*a*x)/(a**2 + 1)) + b
+    """
+    def xf(x,y): 
+        return ((1-a**2)/(1+a**2))* x + (2*a/(a**2 + 1))*(y-b)
+
+    def yf(x,y):
+        return (((a**2 - 1)/(a**2 + 1)))*(y-b) + ((2*a*x)/(a**2 + 1)) + b
+
+    flipped_pts = np.array(list(map(lambda p: [xf(p[0],p[1]), yf(p[0],p[1])], block.vertices)))
+    return Block(flipped_pts, not block.direction)
+
 if __name__ == '__main__':
 
     pass
+
+    # @staticmethod
+    # def get_iter_between_items(arr, item1, item2):
+    #     have_reached_item1 = False
+    #     INF_LOOP_GUARD = 100
+    #     for item in Block.circular_iter(arr):
+    #         if INF_LOOP_GUARD < 0:
+    #             break
+    #         else:
+    #             INF_LOOP_GUARD -= 1
+    #         if not have_reached_item1:
+    #             if item == item1:
+    #                 have_reached_item1 = True
+    #         else:
+    #             yield item
+    #             if item == item2:
+    #                 break
+    #
+    # def circular_iter(arr):
+    #     alen = len(arr)
+    #     indx = alen
+    #     while True:
+    #         if indx < alen:
+    #             yield arr[indx]
+    #             indx = indx + 1
+    #         else:
+    #             indx = 0
+

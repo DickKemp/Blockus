@@ -103,14 +103,7 @@ class TestBlockMethods(unittest.TestCase):
         d = Block(D + INC, False)
         e = Block(E + INC, False)
         with open('test_1.svg', 'w') as ofd:
-            # print('<svg width="1000" height="1000" xmlns="http://www.w3.org/2000/svg">', file=ofd)
             Block.draw_blocks([a,b,c,d,e], file=ofd)
-            # a.draw_svg(color='black', file=ofd)
-            # b.draw_svg(color='red', file=ofd)
-            # c.draw_svg(color='green', file=ofd)
-            # d.draw_svg(color='orange', file=ofd)
-            # e.draw_svg(color='brown', file=ofd)
-            # print('</svg >', file=ofd)
         blks = [(b,0),(c,0),(d,0),(e,0)]
         for i in range(0,4):
             with open('test_align_{str(i)}.svg', 'w') as ofd:
