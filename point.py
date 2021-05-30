@@ -14,7 +14,7 @@ class Point:
         #return abs(self.x - other.x) < Point.TOLERANCE and abs(self.y - other.y) < Point.TOLERANCE
         # return self.x == other.x and self.y == other.y
         return round(self.x,4) == round(other.x,4) and round(self.y,4) == round(other.y,4)
-        
+
     def get_nparray(self):
         return np.array([self.x, self.y])
 
@@ -30,6 +30,9 @@ class Point:
     def translate(pt: Point, x: float, y: float) -> Point:
         return Point(pt.x + x, pt.y + y)
 
+def summer(a,b):
+    return Point(a.x + b.x, a.y + b.y)
+
 
 def calc_angle(vertex_pt: Point, start_pt: Point, end_pt: Point):
     # formula from: https://www.wikihow.com/Find-the-Angle-Between-Two-Vectors
@@ -40,24 +43,17 @@ def calc_angle(vertex_pt: Point, start_pt: Point, end_pt: Point):
     len_b = math.sqrt(b[0]**2 + b[1]**2)
     return math.acos(ab_dot/(len_a * len_b))
 
+from functools import reduce
 def center_of_gravity(points: List[Point]) -> Point:
-    pass
+    point_sum = reduce(summer, points, Point(0,0))
+    ln = len(points)
+    return Point(point_sum.x/ln, point_sum.y/ln)
 
 def distance_between_pts(p1: Point, p2: Point) -> float:
         x = p1.x - p2.x
         y = p1.y - p2.y
         return math.sqrt((x**2) + (y**2))    
 
-def gen_id(points: List[Point]) -> Tuple[int, float]:
-    """
-    ID will be the pair.  First part is the number of edge, second part
-    is the sum of  distances from each point to the block's center of gravity
-    this value will be the same for a block regardless of its orientation or position
-    """
-    def _distance(p,q):
-        return math.sqrt((p[0] - q[0])**2 + (p[1] - q[1])**2)
-    cog = center_of_gravity(points)
-    return (len(points), sum([distance_between_pts(cog, pt) for pt in points]))
 
 def find_shared_pts(pts1: List[Point], pts2: List[Point]) -> Tuple(Set(Point), Set(Point), Set(Point)):
     a = { Point(p.x, p.y) for p in pts1 }

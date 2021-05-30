@@ -132,6 +132,75 @@ class TestRender(unittest.TestCase):
         (b0,b2) = Blok.align_blocks_on_edge(b0, 0, b1, 0)
         mb = Blok.merge(b0, b2)
 
+        mb1:Edge = Blok.get_edge(mb, 2)
+        mb_rot = Blok.rotate(mb, mb1.start_pt, math.pi/1.01)
+
+        print(mb)
+        print(mb_rot)
+
+
+    def test_gen1(self):
+        b0 = Blok(SQUARE)
+        b1 = Blok.rotate(b0, Blok.get_edge(b0,0).start_pt, math.pi/4)
+        unique_blocks = set()
+
+        for b0e in range(Blok.num_edges(b0)):
+            for b1e in range(Blok.num_edges(b1)):
+                (b,bm) = Blok.align_blocks_on_edge(b0, b0e, b1, b1e)
+                newb = Blok.merge(b, bm)
+                unique_blocks.add(newb)
+
+    def test_gen2(self):
+        b0 = Blok(SQUARE)
+        b1 = Blok.rotate(b0, Blok.get_edge(b0,0).start_pt, math.pi/4)
+        uniq = set()
+        uniq.add(b0)
+        all = []
+        level1 = self.gen_next_level(uniq, b1)
+
+        print("level1")
+        for s in iter(level1):
+            all.append(s)
+
+        print("level2")
+        level2 = self.gen_next_level(level1, b1)
+        for s in iter(level2):
+            all.append(s)
+
+        print("level3")
+        level3 = self.gen_next_level(level2, b1)
+        for s in iter(level3):
+            all.append(s)
+        
+        normalized_bloks = [Blok.normalize(b) for b in all]
+        bigbox = Box.bounding_box_of_boxex([PolygonShape(b.points).bounding_box() for b in normalized_bloks])
+
+        d = int(math.sqrt(len(all)))
+        cv = Canvas(width=20, height=20, nrows=d, ncols=d)
+        i = 0
+        for b in normalized_bloks:
+            print(b)
+            c = int(i / d)
+            r = int(i % d)
+            sh = PolygonShape(b.points, style=Style(color='black'))
+            box = cv.get_box_for_cell(r, c)
+            cv = Canvas.add_shape2(cv, sh, box, label=f"({str(r)},{str(c)})")
+            i = i + 1
+    
+        with open('all1.svg', 'w') as fd:
+                Canvas.render_as_svg(cv, file=fd)
+
+
+    def gen_next_level(self, levelset, b1):
+        unique_blocks = set()
+        for b0 in iter(levelset):
+            for b0e in range(Blok.num_edges(b0)):
+                for b1e in range(Blok.num_edges(b1)):
+                    (b,bm) = Blok.align_blocks_on_edge(b0, b0e, b1, b1e)
+                    newb = Blok.merge(b, bm)
+                    unique_blocks.add(newb)
+
+        return unique_blocks
 
     def test_rotate(self):
         b0 = Blok([Point(1,1), Point(2,3), Point(3,1)]) 

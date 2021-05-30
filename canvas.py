@@ -5,7 +5,6 @@ import numpy as np
 import math
 import sys
 
-from blokus import Blok
 from point import Point, calc_angle, rearrange_origin, is_path_clockwise, is_eq_float, get_item, find_shared_pts, diff
 from edge import Edge
 
@@ -121,6 +120,14 @@ class Box():
         return self.upper_right_pt.x
     def maxy(self):
         return self.upper_right_pt.y
+    
+    @staticmethod
+    def bounding_box_of_boxex(boxes:List[Box]) -> Box:
+        minx = min([b.minx() for b in boxes])
+        miny = min([b.miny() for b in boxes])
+        maxx = max([b.maxx() for b in boxes])
+        maxy = max([b.maxy() for b in boxes])
+        return Box(Point(minx, miny), Point(maxx, maxy))
 
 # ##################################################
 #
@@ -158,6 +165,7 @@ class Canvas():
         height_margin = container_box.height() * margin_percent
         inner_box = Box(Point(container_box.lower_left_pt.x + width_margin/2, container_box.lower_left_pt.y + height_margin/2), 
                         Point(container_box.upper_right_pt.x - height_margin/2, container_box.upper_right_pt.y - height_margin/2))
+
         scalex = inner_box.width() / (shape_box.width())
         scaley = inner_box.height() / (shape_box.height())
 
@@ -173,6 +181,31 @@ class Canvas():
             outline_shape.append(PolygonShape(container_box.get_path(), label=label))
         nc = Canvas(c.shapes + [translated_shape] + outline_shape, c.lines, c.viewBoxHeight, c.viewBoxWidth, c.num_rows, c.num_cols)
         return nc
+
+    @staticmethod
+    def add_shape3(c: Canvas, shape: Shape, container_box: Box, super_shape_box: Box, outline:bool=True, margin_percent:float=0.2, label:str=None) -> Canvas:
+        shape_box = super_shape_box
+        width_margin = container_box.width() * margin_percent
+        height_margin = container_box.height() * margin_percent
+        inner_box = Box(Point(container_box.lower_left_pt.x + width_margin/2, container_box.lower_left_pt.y + height_margin/2), 
+                        Point(container_box.upper_right_pt.x - height_margin/2, container_box.upper_right_pt.y - height_margin/2))
+
+        scalex = inner_box.width() / (shape_box.width())
+        scaley = inner_box.height() / (shape_box.height())
+
+        scalexy = min([scalex, scaley])
+
+        scaled_shape = shape.scale(xfactor=scalexy, yfactor=scalexy)
+        scaled_shape_box = scaled_shape.bounding_box()
+
+        translation_amt = diff(inner_box.lower_left_pt, scaled_shape_box.lower_left_pt)
+        translated_shape = scaled_shape.translate(translation_amt)
+        outline_shape = []
+        if outline:
+            outline_shape.append(PolygonShape(container_box.get_path(), label=label))
+        nc = Canvas(c.shapes + [translated_shape] + outline_shape, c.lines, c.viewBoxHeight, c.viewBoxWidth, c.num_rows, c.num_cols)
+        return nc
+
 
     # add_line_to_canvas() will add a line from p1 to p2 to the canvas c
     @staticmethod

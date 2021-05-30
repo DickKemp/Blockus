@@ -2,8 +2,11 @@ from __future__ import annotations
 import math
 from typing import List, Set, Tuple 
 import numpy as np
+from functools import reduce
 
-from point import Point, calc_angle, rearrange_origin, is_path_clockwise, is_eq_float, get_item, find_shared_pts
+from point import Point, calc_angle, rearrange_origin, is_path_clockwise, is_eq_float, get_item, find_shared_pts, distance_between_pts, center_of_gravity
+
+from canvas import Shape, Box, PolygonShape, Canvas, Style
 
 from edge import Edge
 
@@ -36,12 +39,27 @@ class Blok:
     def __eq__(self, other):
         if not isinstance(other, Blok):
             return NotImplemented
-        if len(self.points) != len(other.points):
-            return False
-        for i in range(len(self.points)):
-            if self.points[i] != other.points[i]:
-                return False
-        return True
+        return Blok.is_same_block(self, other)
+
+    def __hash__(self):
+        return hash(self.gen_id())
+
+    # is_same_block() returns true if the blocks b1 and b2 have exactly the same size and shape
+    @staticmethod
+    def is_same_block(b1: Blok, b2: Blok) -> bool:
+        b1_cnt, b1_id = b1.gen_id()
+        b2_cnt, b2_id = b2.gen_id()
+        return b1_cnt == b2_cnt and b1_id == b2_id
+
+    def gen_id(self) -> Tuple[int, float]:
+        """
+        ID will be the pair.  First part is the number of edge, second part
+        is the sum of  distances from each point to the block's center of gravity
+        this value will be the same for a block regardless of its orientation or position
+        """
+
+        cog = center_of_gravity(self.points)
+        return (len(self.points), round(sum([distance_between_pts(cog, pt) for pt in self.points]), 8))
 
     def __str__(self: Blok) -> str:
         points = ""
@@ -51,6 +69,13 @@ class Blok:
             first=False
             points=f"{points}{sep}{pt}"
         return f'Blok:[{points}]'
+    
+    def get_bounding_box(self):
+        minx = min([p.x for p in self.points])
+        miny = min([p.y for p in self.points])
+        maxx = max([p.x for p in self.points])
+        maxy = max([p.y for p in self.points])
+        return (Box(Point(minx, miny), Point(maxx, maxy)))
 
     @staticmethod
     def create_from_nparray(nparray: np.ndarray) -> Blok:
@@ -183,17 +208,63 @@ class Blok:
 
         return (b1, rotated_and_translated_block)
 
-    # is_same_block() returns true if the blocks b1 and b2 have exactly the same size and shape
-    @staticmethod
-    def is_same_block(b1: Blok, b2: Blok) -> bool:
-        pass
 
     # merge() will return the block formed after merging blocks b1 and b2
     # b1 and b2 are retained in the resulting block as component blocks
     @staticmethod
     def merge(b1: Blok, b2: Blok) -> Blok:
-        shared_pts = find_shared_pts(b1.points, b2.points)
-        raise  Exception("not implemented")
+        only_b1, shared, only_b2 = find_shared_pts(b1.points, b2.points)
+        bp1:List[Point] = b1.points
+        bp2:List[Point] = b2.points
+        i1 = 0
+        i2 = 0
+        if len(only_b1) == 0 or len(only_b2) == 0:
+            #raise  Exception("neither only_b1 nor only_b2 should be zero")
+            pass
+
+        merged_points:List[Point] = []
+
+        point_only_in_b1 = next(iter(only_b1))
+        # find the index of a point in bp1 that is not in shared
+        i1 = bp1.index(point_only_in_b1)
+
+        start = bp1[i1]
+        # now march along the b1 points until we hit the shared points
+        # each point we traverse becomes part of the newly merged block
+        while get_item(bp1, i1) not in shared:
+            merged_points.append(get_item(bp1, i1))
+            i1 = i1+1
+
+        # now that we reached a point that is shared, switch over to traversing over
+        # the b2 points
+        # first find the index of the point in bp2 equal to the shared point that we
+        # just encountered
+        i2 = bp2.index(get_item(bp1, i1))
+        # add it to the new block
+        merged_points.append(get_item(bp2, i2))
+        i2 = i2 + 1
+
+        # now march along the b2 points until we hit the shared points
+        # each point we traverse becomes part of the newly merged block
+        while get_item(bp2, i2) not in shared:
+            merged_points.append(get_item(bp2, i2))
+            i2 = i2+1
+
+        # now that we again reached a point that is shared, switch over to traversing over
+        # the b1 points
+        # first find the index of the point in bp1 equal to the shared point that we
+        # just encountered
+        i1 = bp1.index(get_item(bp2, i2))
+        # add it to the new block
+        merged_points.append(get_item(bp1, i1))
+        i1 = i1 + 1
+
+        # now finish going through bp1 until we get back to the start point
+        while get_item(bp1, i1) != start:
+            merged_points.append(get_item(bp1, i1))
+            i1 = i1+1
+
+        return Blok(merged_points)
 
     @staticmethod    
     def _find_convex_hull_vertex(points: List[Point]) -> Tuple[Point, Point, Point]:
@@ -220,6 +291,65 @@ class Blok:
         a,origin,c = Blok._find_convex_hull_vertex(pts)
         return is_path_clockwise(a,origin,c), origin
 
+
+def gen_next_level(levelset, b1, not_added=None):
+    unique_blocks = set()
+
+    for b0 in iter(levelset):
+        for b0e in range(Blok.num_edges(b0)):
+            for b1e in range(Blok.num_edges(b1)):
+                (b,bm) = Blok.align_blocks_on_edge(b0, b0e, b1, b1e)
+                newb = Blok.merge(b, bm)
+                if newb not in unique_blocks:
+                    print(f"adding newb: {newb}")
+                    unique_blocks.add(newb)
+                else:
+                    if not_added != None:
+                        not_added.append(newb)
+
+    return unique_blocks
+
+
+
+def runn(basic, num_levels, svg_file):
+    b0 = Blok(basic)
+    b1 = Blok.rotate(b0, Blok.get_edge(b0,0).start_pt, math.pi/4)
+    prev_level = set()
+    prev_level.add(b0)
+    all = [(1,b0)]
+
+    for lev in range(num_levels-1):
+
+        curr_level = gen_next_level(prev_level, b1)
+        print(f"level1: {len(curr_level)}")
+        for s in iter(curr_level):
+            print(s)
+            all.append((lev+2,s))
+        prev_level = curr_level
+
+    normalized_bloks = [(n, Blok.normalize(b)) for n,b in all]
+    bigbox = Box.bounding_box_of_boxex([PolygonShape(b.points).bounding_box() for _,b in normalized_bloks])
+
+    d = int(math.sqrt(len(all)))
+    cv = Canvas(width=20, height=20, nrows=d+2, ncols=d+2)
+    i = 0
+    for n,b in normalized_bloks:
+        c = int(i / d)
+        r = int(i % d)
+        sh = PolygonShape(b.points, style=Style(color='black'))
+        box = cv.get_box_for_cell(r, c)
+        cv = Canvas.add_shape3(cv, sh, box, bigbox, label=f"#blocks: {str(n)}")
+        i = i + 1
+    print(f"num shapes: {len(all)}")
+    with open(svg_file, 'w') as fd:
+            Canvas.render_as_svg(cv, file=fd)
+
+
 if __name__ == '__main__':
 
-    pass
+    SQUARE = [Point(0.0,0.0), Point(1.0,0.0), Point(1.0,1.0), Point(0.0,1.0)]    
+    runn(SQUARE, 6, "square1.svg")
+
+    altitude= (1/2)*math.sqrt(3)
+    TRIANGLE = [Point(0.0, 0.0), Point(0.5,altitude),Point(1.0,0.0)]
+    runn(TRIANGLE, 6, "triangle1.svg")
