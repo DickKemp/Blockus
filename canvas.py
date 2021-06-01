@@ -251,7 +251,7 @@ class Canvas():
         label_anchor = bb.lower_left_pt
         if shape.label:
             inv_pt = c.viewBoxHeight - label_anchor.y
-            print(f'<text x="{label_anchor.x}" y="{inv_pt}" font-family="Verdana" font-size="0.35">{shape.label}</text>', file=file)
+            print(f'<text x="{label_anchor.x}" y="{inv_pt}" font-family="Verdana" font-size="0.25">{shape.label}</text>', file=file)
 
         points=""
         first=True
@@ -264,4 +264,6 @@ class Canvas():
             inv_pt = c.viewBoxHeight - pt.y
             points=f"{points}{sep}{float(pt.x*scale)} {float(inv_pt*scale)}"
 
-        print(f'<polygon points="{points}" fill="none" style="stroke:{shape.style.color};stroke-width:0.01"/>', file=file)
+            size = shape.style.size if shape.style.size else "0.01"
+
+        print(f'<polygon points="{points}" fill="none" style="stroke:{shape.style.color};stroke-width:{size}"/>', file=file)

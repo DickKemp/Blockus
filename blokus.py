@@ -126,7 +126,10 @@ class Blok:
     @staticmethod
     def translate(b: Blok, x: float, y: float) -> Blok:
         moved_points = list(map(lambda p: Point.translate(p, x, y), b.points))
-        return Blok(moved_points)
+        component_blocks = None
+        if b.component_blocks:
+            component_blocks = [Blok.translate(cb, x, y) for cb in b.component_blocks]
+        return Blok(moved_points, component_blocks)
     
     # rotate() will rotate the block theta radians around the point p
     @staticmethod
@@ -143,6 +146,10 @@ class Blok:
         
         # create a new blok using the rotated points
         b3 = Blok.create_from_nparray(rotated_block_points_array)
+
+        if b.component_blocks:
+            component_blocks = [Blok.rotate(cb, rp, theta) for cb in b.component_blocks]
+            b3 = Blok(b3.points, component_blocks)
 
         # finally translate the block back to the rotation point's original location
         return Blok.translate(b3, rp.x, rp.y)
@@ -188,7 +195,7 @@ class Blok:
     # copy()
     @staticmethod
     def copy(b: Blok) -> Blok:
-        return Blok(b.points)
+        return Blok(b.points, b.component_blocks)
 
     # align_blocks_on_edge() will rotate and translate 2 blocks
     # so that the e1 edge of block b1 overlaps exactly with the e2 edge of block b2
