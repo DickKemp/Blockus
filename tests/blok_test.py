@@ -1,5 +1,5 @@
 import unittest
-from blokus import Blok, Circular, search_if_same_circular_lists
+from blokus import Blok, Circular, check_if_circular_lists_are_equal
 from point import Point, is_path_clockwise, rearrange_origin
 from edge import Edge
 import numpy as np
@@ -271,8 +271,8 @@ class TestRender(unittest.TestCase):
         s1 = ['a','b','c','d','e']
         s2 = ['c','d','e', 'a','b']
         s3 = ['c','e','d','a','b']
-        print(search_if_same_circular_lists(s1, s2))
-        print(search_if_same_circular_lists(s1, s3))
+        print(check_if_circular_lists_are_equal(s1, s2))
+        print(check_if_circular_lists_are_equal(s1, s3))
 
 
 if __name__ == '__main__':

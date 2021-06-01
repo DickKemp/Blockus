@@ -16,26 +16,30 @@ class Blok:
     the initializer determines the direction in which the points circumscribe the polygon, and 
     then stores the clockwise version of the points 
 
-    E.g., to define a square block you can pass in these points {(0,0), (X,0), (X,X), (0,X)]
+    E.g., to define a square block you can pass in these points [ Point(0,0), Point(1,0), Point(1,1), Point(0,1)]
     Each pair of consecutive points defines an edge in the block.
     The final edge is formed from the last point and the first
     after checking the direction of the points, it would determine that they are going 
     counterclockwise, so the init method would reverse the list and store the points as
-    [(0,X), (X,X), (X,0), (0,0)]
+    [Point(0,0), Point(0,1), Point(1,1), Point(1,0)]
+    Note that the initializer also finds the point with the smallest y-value (and if there more multiple
+    points with the smallest y-value, then chooses the point with the smallest x-value) and rearranges
+    the list so that that point is first in the list
     """
 
-    # Blok() is a constructor for a new Blok
-    # Blok(points: List[Point]) -> Blok
-
-    def __init__(self: Blok, points: List[Point]) -> None:
+    def __init__(self: Blok, points: List[Point], component_blocks: List[Blok]=None) -> None:
         is_clockwise, path_origin = Blok.find_clockwise_origin(points)
         points = points if is_clockwise else points[::-1]
         self.points = rearrange_origin(points, path_origin)
         self.num_edges = len(points)    
-    
+        self.component_blocks = component_blocks
+
     def get_nparray(self : Blok) -> np.ndarray:
         return np.array([[p.x,p.y] for p in self.points])
 
+        """redefines __eq__ so that two blocks are determined to be equal if they are the 
+        same block regardless of orientation or position.
+        """
     def __eq__(self, other):
         if not isinstance(other, Blok):
             return NotImplemented
@@ -43,18 +47,6 @@ class Blok:
 
     def __hash__(self):
         return hash(self.gen_id())
-        # return hash(self.gen_id3())
-
-    # is_same_block() returns true if the blocks b1 and b2 have exactly the same size and shape
-    @staticmethod
-    def is_same_block0(b1: Blok, b2: Blok) -> bool:
-        b1_cnt, b1_id = b1.gen_id()
-        b2_cnt, b2_id = b2.gen_id()
-        if b1_cnt == b2_cnt and b1_id == b2_id:
-            bp1r = [round(p,8) for p in b1.points]
-            bp2r = [round(p,8) for p in b2.points]
-            return search_if_same_circular_lists(bp1r, bp2r)
-        return False
 
     # is_same_block() returns true if the blocks b1 and b2 have exactly the same size and shape
     @staticmethod
@@ -65,51 +57,12 @@ class Blok:
             b1sum = round(sum(b1_diffs),8)
             b2sum = round(sum(b2_diffs),8)
             if b1sum == b2sum:
-                return search_if_same_circular_lists(b1_diffs, b2_diffs)
+                return check_if_circular_lists_are_equal(b1_diffs, b2_diffs)
         return False
-
-    def gen_id3(self) -> str:
-        cog = center_of_gravity(self.points)
-        diffs_from_cog = [round(distance_between_pts(cog, pt),8) for pt in self.points]
-        min_diff = min(diffs_from_cog)
-        pos_of_min = diffs_from_cog.index(min_diff)
-        sorted_cog_diffs = reorder(diffs_from_cog, pos_of_min)
-        ss = ".".join([f"{str(round(d,5))}" for d in sorted_cog_diffs])
-        return ss
-
-    # is_same_block() returns true if the blocks b1 and b2 have exactly the same size and shape
-    @staticmethod
-    def is_same_block2(b1: Blok, b2: Blok) -> bool:
-        b1_id, b1_id2 = b1.gen_id2()
-
-        e1 = Blok.find_flip_edge(b1)
-        b1_flip = Blok.flip(b1, e1)
-
-        b1_flip_id, b1_flip_id2 = b1_flip.gen_id2()
-
-        b2_id, b2_id2 = b2.gen_id2()
-
-        return (b1_id == b2_id) or (b1_id2 == b2_id) or (b1_flip_id == b2_id) or (b1_flip_id2 == b2_id)
-
-    def gen_id2(self) -> str:
-        cog = center_of_gravity(self.points)
-
-        diffs_from_cog = [distance_between_pts(cog, pt) for pt in self.points]
-        min_diff = min(diffs_from_cog)
-
-        pos_of_min = diffs_from_cog.index(min_diff)
-        sorted_cog_diffs = reorder(diffs_from_cog, pos_of_min)
-
-        sorted_cog_diffs_rev = reorder(diffs_from_cog, pos_of_min, reverse=True)
-
-        ss = ".".join([f"{str(round(d,5))}" for d in sorted_cog_diffs])
-        ss_rev = ".".join([f"{str(round(d,5))}" for d in sorted_cog_diffs_rev])
-
-        return (ss, ss_rev)
 
     def gen_id(self) -> Tuple[int, float]:
         """
-        ID will be the pair.  First part is the number of edge, second part
+        ID will be the pair.  First part is the number of edges, second part
         is the sum of  distances from each point to the block's center of gravity
         this value will be the same for a block regardless of its orientation or position
         """
@@ -139,7 +92,7 @@ class Blok:
             points=f"{points}{sep}{pt}"
         return f'Blok:[{points}]'
     
-    def get_bounding_box(self):
+    def get_bounding_box(self: Blok) -> Box:
         minx = min([p.x for p in self.points])
         miny = min([p.y for p in self.points])
         maxx = max([p.x for p in self.points])
@@ -184,20 +137,17 @@ class Blok:
         # create the rotation matrix given the angle of rotation theta
         rot_matrix = np.array([[math.cos(theta), - math.sin(theta)], [math.sin(theta), math.cos(theta)]])
         
+        # to determine the location of the points after rotation, matrix multiple the points
+        # of the block with the rotation matrx
         rotated_block_points_array = b2.get_nparray() @ rot_matrix
         
+        # create a new blok using the rotated points
         b3 = Blok.create_from_nparray(rotated_block_points_array)
 
-        # translate the block back to the rotation point's original location
+        # finally translate the block back to the rotation point's original location
         return Blok.translate(b3, rp.x, rp.y)
 
 
-    @staticmethod
-    def rotate_to_point(b, pivot_, from_, to_):
-        theta = calc_angle(pivot_, from_, to_)
-        return Blok.rotate(b, pivot_, -theta)
-
-    # flip()
     @staticmethod
     def flip(b: Blok, edge_: Edge) -> Blok:
 
@@ -218,6 +168,9 @@ class Blok:
 
         """
         def flip_point_func(edge: Edge):
+            # a little helper function that will return a 
+            # function that can be applied to a set of points to flip those
+            # points to the other side of an edge acting as a reflection line
             a = edge.start_pt
             b = edge.end_pt
             (x2,y2) = (a.x, a.y)
@@ -260,7 +213,7 @@ class Blok:
 
         # we need to check that direction of the path from rotate_to_pt -> pivot -> rotate_from_pt
         # if clockwise, then we rotate the computed angle in the positive direction, i.e. clockwise
-        # else, we rotate the compute angle in teh negative direction
+        # else, we rotate the compute angle in the negative direction
 
         rotate_from_pt = Blok.get_edge(translated_block, e2).start_pt
         rotation_pivot_pt = b1_edge.start_pt
@@ -279,7 +232,6 @@ class Blok:
 
 
     # merge() will return the block formed after merging blocks b1 and b2
-    # b1 and b2 are retained in the resulting block as component blocks
     @staticmethod
     def merge(b1: Blok, b2: Blok) -> Blok:
         only_b1, shared, only_b2 = find_shared_pts(b1.points, b2.points)
@@ -287,61 +239,71 @@ class Blok:
         bp2:List[Point] = b2.points
         i1 = 0
         i2 = 0
-        if len(only_b1) == 0 or len(only_b2) == 0:
-            #raise  Exception("neither only_b1 nor only_b2 should be zero")
-            pass
 
         merged_points:List[Point] = []
 
-        point_only_in_b1 = next(iter(only_b1))
-        # find the index of a point in bp1 that is not in shared
-        i1 = bp1.index(point_only_in_b1)
+        # the algorithm to merge is to start creating the perimeter of points that
+        # define the outline of the merged block by starting with the points in bp1 and 
+        # moving forward until we hit the point that is shared with bp2.  Then we
+        # switch over to moving forward in bp2 until we again hit the shared point,
+        # then we switch back over to bp1 until we get back to the start.  
+        # the path of points that we traversed will be the resulting merged block
 
+        point_only_in_b1 = next(iter(only_b1))
+
+        # 1. find the index of a point in bp1 that is not in shared, and this 
+        # becomes the starting point of the new merged block
+        i1 = bp1.index(point_only_in_b1)
         start = bp1[i1]
-        # now march along the b1 points until we hit the shared points
+
+        # 2. now march along the b1 points until we hit the shared points
         # each point we traverse becomes part of the newly merged block
         while get_item(bp1, i1) not in shared:
             merged_points.append(get_item(bp1, i1))
             i1 = i1+1
 
-        # now that we reached a point that is shared, switch over to traversing over
-        # the b2 points
+        # 3. now that we reached a point that is shared, switch over to traversing over
+        # the b2 points.
         # first find the index of the point in bp2 equal to the shared point that we
         # just encountered
         i2 = bp2.index(get_item(bp1, i1))
-        # add it to the new block
+
+        # 4. add it to the new block
         merged_points.append(get_item(bp2, i2))
         i2 = i2 + 1
 
-        # now march along the b2 points until we hit the shared points
+        # 5. now march along the b2 points until we hit the shared points once again
         # each point we traverse becomes part of the newly merged block
         while get_item(bp2, i2) not in shared:
             merged_points.append(get_item(bp2, i2))
             i2 = i2+1
 
-        # now that we again reached a point that is shared, switch over to traversing over
+        # 6. now that we again reached a point that is shared, switch over to traversing over
         # the b1 points
         # first find the index of the point in bp1 equal to the shared point that we
         # just encountered
         i1 = bp1.index(get_item(bp2, i2))
-        # add it to the new block
+
+        # 7. add it to the new block
         merged_points.append(get_item(bp1, i1))
         i1 = i1 + 1
 
-        # now finish going through bp1 until we get back to the start point
+        # 8. now finish going through bp1 until we get back to the start point
         while get_item(bp1, i1) != start:
             merged_points.append(get_item(bp1, i1))
             i1 = i1+1
 
-        return Blok(merged_points)
+        return Blok(merged_points, component_blocks=[b1, b2])
 
     @staticmethod    
     def _find_convex_hull_vertex(points: List[Point]) -> Tuple[Point, Point, Point]:
-        # points is an array of Point that circumscribes a polygon in either the clockwise of counterclockwise
+        # points is an array of Point that circumscribes a polygon in  the clockwise
         # direction; find_convex_hull_vertex() will find and return 3 points of the convex hull of that polygon by
-        # simply finding the indices of points with the smallest Y component, and if there are more than one, 
-        # picking the one with the smallest X component
-
+        # finding the index of the point with the smallest Y component (and if there are more than one, 
+        # picking the one with the smallest X component).  THat points is the vertex of the convex hull.
+        # The function then returns a tuple of 3 points consisting of
+        # 1. the point before the vertex point, 2. the vertex point, and 3. the point after the vertex
+        
         points_e = list(enumerate(points))
         min_y_pt_e = min(points_e, key=lambda p: p[1].y)
         min_py = [(i,p) for i,p in points_e if is_eq_float(p.y, min_y_pt_e[1].y)]
@@ -356,85 +318,9 @@ class Blok:
     # point for the origin of the block
     @staticmethod
     def find_clockwise_origin(pts: List[Point]) -> Tuple[bool, Point]:
-
         a,origin,c = Blok._find_convex_hull_vertex(pts)
         return is_path_clockwise(a,origin,c), origin
 
-
-def gen_next_level(levelset, b1, not_added=None):
-    unique_blocks = set()
-    cntr = 0
-    for b0 in iter(levelset):
-        for b0e in range(Blok.num_edges(b0)):
-            for b1e in range(Blok.num_edges(b1)):
-                (b,bm) = Blok.align_blocks_on_edge(b0, b0e, b1, b1e)
-                newb = Blok.merge(b, bm)
-                flip_edge = Blok.find_flip_edge(newb)
-                flipped_newb = Blok.flip(newb, flip_edge)
-                cntr = cntr + 1
-                #print(f"iteration: {cntr}")
-                newb_not_in = newb not in unique_blocks
-                flipped_newb_not_in = flipped_newb not in unique_blocks
-                if newb_not_in and flipped_newb_not_in:
-                    xnewb_not_in = newb not in unique_blocks
-                    xflipped_newb_not_in = flipped_newb not in unique_blocks
-                    newbid = newb.gen_id()
-                    flipped_newbid = flipped_newb.gen_id()
-                    if newb.gen_id() != flipped_newb.gen_id():
-                        # print(f"newb: {newb}")
-                        # print(f"flipped_newb: {flipped_newb}")
-                        # print(f"flipped_edge: {str(flip_edge)}")
-                        capture_bloks(newb, flipped_newb)
-                if newb_not_in and flipped_newb_not_in:
-                    print(f"adding newb: {newb}: id:{newb.gen_id()}, flipped_newb_id: {flipped_newb.gen_id()}")
-                    unique_blocks.add(newb)
-                else:
-                    if not_added != None:
-                        not_added.append(newb)
-    return unique_blocks
-
-def capture_bloks(b1:Blok, b2:Blok, filename="debug1.svg"):
-    cv = Canvas(width=20, height=20, nrows=3, ncols=3)
-    sh1 = PolygonShape(b1.points, style=Style(color='black'))
-    sh2 = PolygonShape(b2.points, style=Style(color='red'))
-    cv = Canvas.add_shape2(cv, sh1, cv.get_box_for_cell(0, 0), label=f"#blocks: {str(b1.gen_id())}")
-    cv = Canvas.add_shape2(cv, sh2, cv.get_box_for_cell(1, 1), label=f"#blocks: {str(b2.gen_id())}")
-    with open(filename, 'w') as fd:
-            Canvas.render_as_svg(cv, file=fd)
-
-def runn(basic, num_levels, svg_file):
-    b0 = Blok(basic)
-    b1 = Blok.rotate(b0, Blok.get_edge(b0,0).start_pt, math.pi/4)
-    prev_level = set()
-    prev_level.add(b0)
-    all = [(1,b0)]
-
-    for lev in range(num_levels-1):
-        curr_level = gen_next_level(prev_level, b1)
-        for s in iter(curr_level):
-            #print(s)
-            all.append((lev+2,s))
-        prev_level = curr_level
-
-    normalized_bloks = [(n, Blok.normalize(b)) for n,b in all]
-    bigbox = Box.bounding_box_of_boxex([PolygonShape(b.points).bounding_box() for _,b in normalized_bloks])
-
-    d = int(math.sqrt(len(all)))
-    cv = Canvas(width=20, height=20, nrows=d+2, ncols=d+2)
-    i = 0
-    for n,b in normalized_bloks:
-        c = int(i / d)
-        r = int(i % d)
-        sh = PolygonShape(b.points, style=Style(color='black'))
-        box = cv.get_box_for_cell(r, c)
-        cv = Canvas.add_shape3(cv, sh, box, bigbox, label=f"#blocks: {str(n)}")
-        # print(f"{i} ==============================")
-        # print(f"bloc {n}: {b}")
-        # print(f"bloc {n} ID:: {b.gen_id()}")
-        i = i + 1
-    print(f"num shapes: {len(all)}")
-    with open(svg_file, 'w') as fd:
-            Canvas.render_as_svg(cv, file=fd)
 
 class Circular():
     def __init__(self, lst, start_index):
@@ -455,7 +341,7 @@ class Circular():
         else:
             raise StopIteration
 
-def search_if_same_circular_lists(s1, s2):
+def check_if_circular_lists_are_equal(s1, s2):
     c1 = Circular(s1,0)
     for idx in range(len(s2)):
         c2 = Circular(s2, idx)
@@ -466,14 +352,3 @@ def search_if_same_circular_lists(s1, s2):
 def equal_sequence(it1, it2) -> bool:
     return tuple(it1) == tuple(it2)
 
-if __name__ == '__main__':
-
-    SQUARE = [Point(0.0,0.0), Point(1.0,0.0), Point(1.0,1.0), Point(0.0,1.0)]    
-    runn(SQUARE, 4, "square4.svg")
-
-    SQUARE = [Point(0.0,0.0), Point(1.0,0.0), Point(1.0,1.0), Point(0.0,1.0)]    
-    runn(SQUARE, 6, "square6.svg")
-
-    altitude= (1/2)*math.sqrt(3)
-    TRIANGLE = [Point(0.0, 0.0), Point(0.5,altitude),Point(1.0,0.0)]
-    runn(TRIANGLE, 7, "triangle7.svg")
