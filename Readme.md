@@ -1,8 +1,11 @@
-Blockus
+# Blockus
+
+## Just Generates blocks
 
 the set of possible blocks that can be created from 6 squares:
 
-        
-![Alt text](square6a.svg)
 <img src="./square6a.svg">
 
+the set of possible blocks that can be created from 7 triangles:
+
+<img src="./triangle7a.svg">
