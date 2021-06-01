@@ -4,7 +4,7 @@ from typing import List, Set, Tuple
 import numpy as np
 from functools import reduce
 
-from point import Point, calc_angle, rearrange_origin, is_path_clockwise, is_eq_float, get_item, find_shared_pts, distance_between_pts, center_of_gravity
+from point import Point, calc_angle, diff, rearrange_origin, is_path_clockwise, is_eq_float, get_item, find_shared_pts, distance_between_pts, center_of_gravity, reorder
 
 from canvas import Shape, Box, PolygonShape, Canvas, Style
 
@@ -43,13 +43,69 @@ class Blok:
 
     def __hash__(self):
         return hash(self.gen_id())
+        # return hash(self.gen_id3())
+
+    # is_same_block() returns true if the blocks b1 and b2 have exactly the same size and shape
+    @staticmethod
+    def is_same_block0(b1: Blok, b2: Blok) -> bool:
+        b1_cnt, b1_id = b1.gen_id()
+        b2_cnt, b2_id = b2.gen_id()
+        if b1_cnt == b2_cnt and b1_id == b2_id:
+            bp1r = [round(p,8) for p in b1.points]
+            bp2r = [round(p,8) for p in b2.points]
+            return search_if_same_circular_lists(bp1r, bp2r)
+        return False
 
     # is_same_block() returns true if the blocks b1 and b2 have exactly the same size and shape
     @staticmethod
     def is_same_block(b1: Blok, b2: Blok) -> bool:
-        b1_cnt, b1_id = b1.gen_id()
-        b2_cnt, b2_id = b2.gen_id()
-        return b1_cnt == b2_cnt and b1_id == b2_id
+        if Blok.num_edges(b1) == Blok.num_edges(b2):
+            b1_diffs = b1.calc_diffs_from_cog()
+            b2_diffs = b2.calc_diffs_from_cog()
+            b1sum = round(sum(b1_diffs),8)
+            b2sum = round(sum(b2_diffs),8)
+            if b1sum == b2sum:
+                return search_if_same_circular_lists(b1_diffs, b2_diffs)
+        return False
+
+    def gen_id3(self) -> str:
+        cog = center_of_gravity(self.points)
+        diffs_from_cog = [round(distance_between_pts(cog, pt),8) for pt in self.points]
+        min_diff = min(diffs_from_cog)
+        pos_of_min = diffs_from_cog.index(min_diff)
+        sorted_cog_diffs = reorder(diffs_from_cog, pos_of_min)
+        ss = ".".join([f"{str(round(d,5))}" for d in sorted_cog_diffs])
+        return ss
+
+    # is_same_block() returns true if the blocks b1 and b2 have exactly the same size and shape
+    @staticmethod
+    def is_same_block2(b1: Blok, b2: Blok) -> bool:
+        b1_id, b1_id2 = b1.gen_id2()
+
+        e1 = Blok.find_flip_edge(b1)
+        b1_flip = Blok.flip(b1, e1)
+
+        b1_flip_id, b1_flip_id2 = b1_flip.gen_id2()
+
+        b2_id, b2_id2 = b2.gen_id2()
+
+        return (b1_id == b2_id) or (b1_id2 == b2_id) or (b1_flip_id == b2_id) or (b1_flip_id2 == b2_id)
+
+    def gen_id2(self) -> str:
+        cog = center_of_gravity(self.points)
+
+        diffs_from_cog = [distance_between_pts(cog, pt) for pt in self.points]
+        min_diff = min(diffs_from_cog)
+
+        pos_of_min = diffs_from_cog.index(min_diff)
+        sorted_cog_diffs = reorder(diffs_from_cog, pos_of_min)
+
+        sorted_cog_diffs_rev = reorder(diffs_from_cog, pos_of_min, reverse=True)
+
+        ss = ".".join([f"{str(round(d,5))}" for d in sorted_cog_diffs])
+        ss_rev = ".".join([f"{str(round(d,5))}" for d in sorted_cog_diffs_rev])
+
+        return (ss, ss_rev)
 
     def gen_id(self) -> Tuple[int, float]:
         """
@@ -57,9 +113,22 @@ class Blok:
         is the sum of  distances from each point to the block's center of gravity
         this value will be the same for a block regardless of its orientation or position
         """
-
         cog = center_of_gravity(self.points)
-        return (len(self.points), round(sum([distance_between_pts(cog, pt) for pt in self.points]), 8))
+        diffs_from_cog = [distance_between_pts(cog, pt) for pt in self.points]
+        diffsum = round(sum(diffs_from_cog), 8)
+        return (len(self.points), diffsum)
+
+    def calc_diffs_from_cog(self) -> List[float]:
+        cog = center_of_gravity(self.points)
+        diffs_from_cog = [round(distance_between_pts(cog, pt),8) for pt in self.points]
+        return diffs_from_cog
+
+    @staticmethod
+    def find_flip_edge(b1: Blok) -> Edge:
+        for ei in range(Blok.num_edges(b1)):
+            edge = Blok.get_edge(b1,ei)
+            if not Edge.is_vertical(edge):
+                return edge
 
     def __str__(self: Blok) -> str:
         points = ""
@@ -294,22 +363,44 @@ class Blok:
 
 def gen_next_level(levelset, b1, not_added=None):
     unique_blocks = set()
-
+    cntr = 0
     for b0 in iter(levelset):
         for b0e in range(Blok.num_edges(b0)):
             for b1e in range(Blok.num_edges(b1)):
                 (b,bm) = Blok.align_blocks_on_edge(b0, b0e, b1, b1e)
                 newb = Blok.merge(b, bm)
-                if newb not in unique_blocks:
-                    print(f"adding newb: {newb}")
+                flip_edge = Blok.find_flip_edge(newb)
+                flipped_newb = Blok.flip(newb, flip_edge)
+                cntr = cntr + 1
+                #print(f"iteration: {cntr}")
+                newb_not_in = newb not in unique_blocks
+                flipped_newb_not_in = flipped_newb not in unique_blocks
+                if newb_not_in and flipped_newb_not_in:
+                    xnewb_not_in = newb not in unique_blocks
+                    xflipped_newb_not_in = flipped_newb not in unique_blocks
+                    newbid = newb.gen_id()
+                    flipped_newbid = flipped_newb.gen_id()
+                    if newb.gen_id() != flipped_newb.gen_id():
+                        # print(f"newb: {newb}")
+                        # print(f"flipped_newb: {flipped_newb}")
+                        # print(f"flipped_edge: {str(flip_edge)}")
+                        capture_bloks(newb, flipped_newb)
+                if newb_not_in and flipped_newb_not_in:
+                    print(f"adding newb: {newb}: id:{newb.gen_id()}, flipped_newb_id: {flipped_newb.gen_id()}")
                     unique_blocks.add(newb)
                 else:
                     if not_added != None:
                         not_added.append(newb)
-
     return unique_blocks
 
-
+def capture_bloks(b1:Blok, b2:Blok, filename="debug1.svg"):
+    cv = Canvas(width=20, height=20, nrows=3, ncols=3)
+    sh1 = PolygonShape(b1.points, style=Style(color='black'))
+    sh2 = PolygonShape(b2.points, style=Style(color='red'))
+    cv = Canvas.add_shape2(cv, sh1, cv.get_box_for_cell(0, 0), label=f"#blocks: {str(b1.gen_id())}")
+    cv = Canvas.add_shape2(cv, sh2, cv.get_box_for_cell(1, 1), label=f"#blocks: {str(b2.gen_id())}")
+    with open(filename, 'w') as fd:
+            Canvas.render_as_svg(cv, file=fd)
 
 def runn(basic, num_levels, svg_file):
     b0 = Blok(basic)
@@ -319,11 +410,9 @@ def runn(basic, num_levels, svg_file):
     all = [(1,b0)]
 
     for lev in range(num_levels-1):
-
         curr_level = gen_next_level(prev_level, b1)
-        print(f"level1: {len(curr_level)}")
         for s in iter(curr_level):
-            print(s)
+            #print(s)
             all.append((lev+2,s))
         prev_level = curr_level
 
@@ -339,17 +428,52 @@ def runn(basic, num_levels, svg_file):
         sh = PolygonShape(b.points, style=Style(color='black'))
         box = cv.get_box_for_cell(r, c)
         cv = Canvas.add_shape3(cv, sh, box, bigbox, label=f"#blocks: {str(n)}")
+        # print(f"{i} ==============================")
+        # print(f"bloc {n}: {b}")
+        # print(f"bloc {n} ID:: {b.gen_id()}")
         i = i + 1
     print(f"num shapes: {len(all)}")
     with open(svg_file, 'w') as fd:
             Canvas.render_as_svg(cv, file=fd)
 
+class Circular():
+    def __init__(self, lst, start_index):
+        self.lst = lst
+        self.start_index = start_index
+        self.listlen = len(lst)
+        self.item_index = 0
+
+    def __iter__(self):
+        self.item_index = 0
+        return self
+
+    def __next__(self):
+        if self.item_index < self.listlen:
+            val = get_item(self.lst, self.start_index + self.item_index)
+            self.item_index += 1
+            return val
+        else:
+            raise StopIteration
+
+def search_if_same_circular_lists(s1, s2):
+    c1 = Circular(s1,0)
+    for idx in range(len(s2)):
+        c2 = Circular(s2, idx)
+        if equal_sequence(iter(c1), iter(c2)):
+            return True
+    return False
+
+def equal_sequence(it1, it2) -> bool:
+    return tuple(it1) == tuple(it2)
 
 if __name__ == '__main__':
 
     SQUARE = [Point(0.0,0.0), Point(1.0,0.0), Point(1.0,1.0), Point(0.0,1.0)]    
-    runn(SQUARE, 6, "square1.svg")
+    runn(SQUARE, 4, "square4.svg")
+
+    SQUARE = [Point(0.0,0.0), Point(1.0,0.0), Point(1.0,1.0), Point(0.0,1.0)]    
+    runn(SQUARE, 6, "square6.svg")
 
     altitude= (1/2)*math.sqrt(3)
     TRIANGLE = [Point(0.0, 0.0), Point(0.5,altitude),Point(1.0,0.0)]
-    runn(TRIANGLE, 6, "triangle1.svg")
+    runn(TRIANGLE, 7, "triangle7.svg")

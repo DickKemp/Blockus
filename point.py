@@ -85,3 +85,9 @@ def is_eq_float(f1: float, f2: float) -> bool:
 
 def diff(pt1:Point, pt2:Point)->Point:
     return Point(pt1.x - pt2.x, pt1.y - pt2.y)
+
+def reorder(lst, indx, reverse=False):
+    if reverse:
+        return lst[indx::-1] + lst[:indx:-1]
+    else:
+        return lst[indx:] + lst[:indx]

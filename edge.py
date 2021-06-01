@@ -16,6 +16,9 @@ class Edge:
     def __ne__(self, other): 
         return not self.__eq__(other)
     
+    def __str__(self):
+        return f"Edge: {self.start_pt}, {self.end_pt}"
+
     @staticmethod
     def length(e: Edge) -> float:
         return distance_between_pts(e.start_pt, e.end_pt)
@@ -25,4 +28,11 @@ class Edge:
         diff = Edge.length(e1) - Edge.length(e2)
         return abs(diff) < Point.TOLERANCE
     
+    @staticmethod
+    def is_vertical(e: Edge) -> bool:
+        if round(e.start_pt.x,8) == round(e.end_pt.x, 8):
+            return True
+        else:
+            return False    
 
+            

@@ -1,5 +1,5 @@
 import unittest
-from blokus import Blok
+from blokus import Blok, Circular, search_if_same_circular_lists
 from point import Point, is_path_clockwise, rearrange_origin
 from edge import Edge
 import numpy as np
@@ -256,6 +256,24 @@ class TestRender(unittest.TestCase):
             for j in range(4):
                 orig, aligned = Blok.align_blocks_on_edge(b1, i, b3, j)
                 print(f"aligned edge {i} {j}: {aligned}")
+
+    
+    def test_circular(self):
+        lst1 = ['a','b','c','d','e']
+        lst2 = ['a']
+        lst3 = []
+
+        cl1 = Circular(lst1, 4)
+        for c in iter(cl1):
+            print(c)
+
+    def test_circular2(self):
+        s1 = ['a','b','c','d','e']
+        s2 = ['c','d','e', 'a','b']
+        s3 = ['c','e','d','a','b']
+        print(search_if_same_circular_lists(s1, s2))
+        print(search_if_same_circular_lists(s1, s3))
+
 
 if __name__ == '__main__':
     unittest.main()
