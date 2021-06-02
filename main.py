@@ -5,6 +5,8 @@ from canvas import Canvas, CompositeShape, PolygonShape, Style, Box
 from point import Point
 import math
 
+
+
 def gen_next_level(levelset, b1) -> Set[Blok]:
     unique_blocks = set()
     cntr = 0
@@ -60,11 +62,7 @@ def runn(basic, num_levels, svg_file):
 if __name__ == '__main__':
 
     SQUARE = [Point(0.0,0.0), Point(1.0,0.0), Point(1.0,1.0), Point(0.0,1.0)]    
-    runn(SQUARE, 4, "square4a.svg")
-
-    SQUARE = [Point(0.0,0.0), Point(1.0,0.0), Point(1.0,1.0), Point(0.0,1.0)]    
     runn(SQUARE, 6, "square6a.svg")
 
-    altitude= (1/2)*math.sqrt(3)
-    TRIANGLE = [Point(0.0, 0.0), Point(0.5,altitude),Point(1.0,0.0)]
+    TRIANGLE = [Point(0.0, 0.0), Point(0.5,(1/2)*math.sqrt(3)),Point(1.0,0.0)]
     runn(TRIANGLE, 7, "triangle7a.svg")
