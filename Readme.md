@@ -29,7 +29,7 @@ ISOTRIANGLE = [Point(0.0, 0.0), Point(1.0, 1.0), Point(1.0,0.0)]
 runn(ISOTRIANGLE, 6, "svg/iso_triangle6.svg")
 ```
 
-will generate the 155 possible unique shapes that can be created from using 1 to 6 isosoles triangles:
+will generate the 155 possible unique shapes that can be created from using 1 to 6 isosceles triangles:
 
 <img src="svg/iso_triangle6.svg">
 
@@ -39,12 +39,18 @@ PENTAGON = [Point(x,y) for (x,y) in pentagon(1.0)]
 runn(PENTAGON, 5, "svg/pentagon5.svg")
 runn(PENTAGON, 6, "svg/pentagon6.svg")
 ```
-will generate the set of unique shapes that can be created from 5 pentagons:
+will generate the set of 36 unique shapes that can be created using 1 to 5 pentagons:
 
 <img src="svg/pentagon5.svg">
 
-and the set of unique shapes that can be created from 6 pentagons:
+and the set of 154 unique shapes that can be created using 1 to 6 pentagons:
 
 <img src="svg/pentagon6.svg">
+
+Note that we get just one more shape when using up to 6 isosceles triangles than when using up to 6 pentagons.
+
+7 equilateral triangles only gives us only 46 unique shapes:
+
+<img src="svg/triangle7.svg">
 
 Cool, huh?
