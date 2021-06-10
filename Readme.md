@@ -4,18 +4,47 @@
 
 ```python
 SQUARE = [Point(0.0,0.0), Point(1.0,0.0), Point(1.0,1.0), Point(0.0,1.0)]    
-runn(SQUARE, 6, "svg/square6.svg")
+runn(SQUARE, 5, "svg/square5.svg")
 ```
 
-will generate the set of unique shapes that can be created from 6 squares:
+will generate the 21 unique shapes used in the classic Blokus/Duo game.  These are all the possible shapes formed from 1 to 5 squares.
 
-<img src="svg/square6.svg">
+<img src="svg/square5.svg">
 
 ```python
 TRIANGLE = [Point(0.0, 0.0), Point(0.5,(1/2)*math.sqrt(3)),Point(1.0,0.0)]
 runn(TRIANGLE, 7, "svg/triangle7.svg")
 ```
 
-will generate the set of unique shapes that can be created from 7 triangles:
+will generate the 22 unique shapes used in the classic Blokus Trigon game.  These are all the possible shapes formed from 1 to 6 equilateral triangles.
 
-<img src=".svg/triangle7.svg">
+<img src="svg/triangle6.svg">
+
+
+So how about a different type of triangle?
+This here: 
+
+```python
+ISOTRIANGLE = [Point(0.0, 0.0), Point(1.0, 1.0), Point(1.0,0.0)]
+runn(ISOTRIANGLE, 6, "svg/iso_triangle6.svg")
+```
+
+will generate the 155 possible unique shapes that can be created from using 1 to 6 isosoles triangles:
+
+<img src="svg/iso_triangle6.svg">
+
+What about Pentagons?  
+```python
+PENTAGON = [Point(x,y) for (x,y) in pentagon(1.0)]
+runn(PENTAGON, 5, "svg/pentagon5.svg")
+runn(PENTAGON, 6, "svg/pentagon6.svg")
+```
+will generate the set of unique shapes that can be created from 5 pentagons:
+
+<img src="svg/pentagon5.svg">
+
+and the set of unique shapes that can be created from 6 pentagons:
+
+<img src="svg/pentagon6.svg">
+
+Cool, huh?
