@@ -256,11 +256,13 @@ class Canvas():
         points=""
         first=True
         for pt in shape.points:
-            if first:
-                sep=""
-                first=False
-            else:
-                sep=", "
+            sep = "" if first else ", "
+            first = False
+            # if first:
+            #     sep=""
+            #     first=False
+            # else:
+            #     sep=", "
             inv_pt = c.viewBoxHeight - pt.y
             points=f"{points}{sep}{float(pt.x*scale)} {float(inv_pt*scale)}"
 

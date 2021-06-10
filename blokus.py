@@ -153,8 +153,15 @@ class Blok:
 
         # finally translate the block back to the rotation point's original location
         return Blok.translate(b3, rp.x, rp.y)
+    
 
-
+    @staticmethod
+    def blocks_overlap(b1: Blok, b2: Blok) -> bool:
+        import shapely.geometry as geo
+        p1 = geo.Polygon([(round(p.x,8),round(p.y,8)) for p in b1.points])
+        p2 = geo.Polygon([(round(p.x,8),round(p.y,8)) for p in b2.points])
+        return p1.intersects(p1) and not p1.touches(p2)
+    
     @staticmethod
     def flip(b: Blok, edge_: Edge) -> Blok:
 
@@ -208,7 +215,7 @@ class Blok:
         b2_edge = Blok.get_edge(b2, e2)
 
         if not Edge.has_same_length(b1_edge, b2_edge):
-            raise  Exception("edges were not the same length")
+            raise UnequalEdgesException()
 
         from_pt = b2_edge.end_pt
         to_pt = b1_edge.start_pt
@@ -235,6 +242,9 @@ class Blok:
         
         rotated_and_translated_block = Blok.rotate(translated_block, rotation_pivot_pt, rotate_direction * theta)
 
+        if Blok.blocks_overlap(b1, rotated_and_translated_block):
+            raise OverlapException()
+
         return (b1, rotated_and_translated_block)
 
 
@@ -242,12 +252,42 @@ class Blok:
     @staticmethod
     def merge(b1: Blok, b2: Blok) -> Blok:
         only_b1, shared, only_b2 = find_shared_pts(b1.points, b2.points)
+
+        point_only_in_b1 = next(iter(only_b1))
+
+        merged_points = Blok._merge(b1, b2, shared, point_only_in_b1)
+
+        # to handle the case where there may be a hole formed within the merged block, we need 
+        # to make sure that the resulting merged block is truly the outer perimeter, and not the 
+        # perimeter of the inner "hole"
+        #
+        # to consider the possibility that there is a hole, first check that the merged points include
+        # each and every point in only_b1.  There will be a hole if there are points in only_b1 that are
+        # not in the merged perimeter.
+        # if ths is the case the pick one of those points and use it as the seed to find the merged
+        # perimeter.  It should return another set of merged points. 
+        # the set of points we want is the larger one that encloses the holes
+        #
+        # TODO:  there may be multiple holes, we should iterate and check for all
+
+        merged_points = Blok._merge(b1, b2, shared, point_only_in_b1)
+
+        possible_hole = only_b1 - set(merged_points)
+        if len(possible_hole) > 0:
+            another_point_only_in_b1 = next(iter(possible_hole))
+            other_merged_points = Blok._merge(b1, b2, shared, another_point_only_in_b1)
+            if len(other_merged_points) > len(merged_points):
+                merged_points = other_merged_points
+
+        return Blok(merged_points, component_blocks=[b1, b2])
+
+    @staticmethod
+    def _merge(b1, b2, shared, point_only_in_b1):
+        merged_points:List[Point] = []
         bp1:List[Point] = b1.points
         bp2:List[Point] = b2.points
         i1 = 0
         i2 = 0
-
-        merged_points:List[Point] = []
 
         # the algorithm to merge is to start creating the perimeter of points that
         # define the outline of the merged block by starting with the points in bp1 and 
@@ -256,8 +296,7 @@ class Blok:
         # then we switch back over to bp1 until we get back to the start.  
         # the path of points that we traversed will be the resulting merged block
 
-        point_only_in_b1 = next(iter(only_b1))
-
+    
         # 1. find the index of a point in bp1 that is not in shared, and this 
         # becomes the starting point of the new merged block
         i1 = bp1.index(point_only_in_b1)
@@ -299,8 +338,7 @@ class Blok:
         while get_item(bp1, i1) != start:
             merged_points.append(get_item(bp1, i1))
             i1 = i1+1
-
-        return Blok(merged_points, component_blocks=[b1, b2])
+        return merged_points
 
     @staticmethod    
     def _find_convex_hull_vertex(points: List[Point]) -> Tuple[Point, Point, Point]:
@@ -328,6 +366,11 @@ class Blok:
         a,origin,c = Blok._find_convex_hull_vertex(pts)
         return is_path_clockwise(a,origin,c), origin
 
+class OverlapException(Exception):
+    pass
+
+class UnequalEdgesException(Exception):
+    pass
 
 class Circular():
     def __init__(self, lst, start_index):
