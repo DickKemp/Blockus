@@ -90,9 +90,9 @@ if __name__ == '__main__':
     PENTAGON = [Point(x,y) for (x,y) in pentagon(1.0)]
 
     for i in range(1,8):
-        runn(SQUARE, i, f"square{i}.svg")
-        runn(TRIANGLE, i, f"triangle{i}.svg")
-        runn(ISOTRIANGLE, i, f"iso_triangle{i}.svg")
-        runn(PENTAGON, i, f"pentagon{i}.svg")
+        runn(SQUARE, i, f"svg/square{i}.svg")
+        runn(TRIANGLE, i, f"svg/triangle{i}.svg")
+        runn(ISOTRIANGLE, i, f"svg/iso_triangle{i}.svg")
+        runn(PENTAGON, i, f"svg/pentagon{i}.svg")
         pass
 

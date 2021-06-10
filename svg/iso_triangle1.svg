@@ -1,0 +1,7 @@
+<svg width="800" height="800" viewBox="0 0 20 20" preserveAspectRatio="xMinYMin meet" xmlns="http://www.w3.org/2000/svg">
+<polygon points="0 0, 0 20, 20 20, 20 0" fill="none" style="stroke:blue;stroke-width:0.1"/>
+<polygon points="1.0 5.666666666666666, 5.666666666666666 1.0, 5.666666666666666 5.666666666666666" fill="none" style="stroke:black;stroke-width:0.05"/>
+<polygon points="0 0, 0 20, 20 20, 20 0" fill="none" style="stroke:blue;stroke-width:0.1"/>
+<text x="0.0" y="6.666666666666666" font-family="Verdana" font-size="0.25">#blocks: 1</text>
+<polygon points="0.0 6.666666666666666, 0.0 0.0, 6.666666666666667 0.0, 6.666666666666667 6.666666666666666" fill="none" style="stroke:black;stroke-width:0.01"/>
+</svg>
