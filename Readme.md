@@ -13,7 +13,7 @@ will generate the 21 unique shapes used in the classic Blokus/Duo game.  These a
 
 ```python
 TRIANGLE = [Point(0.0, 0.0), Point(0.5,(1/2)*math.sqrt(3)),Point(1.0,0.0)]
-runn(TRIANGLE, 7, "svg/triangle7.svg")
+runn(TRIANGLE, 6, "svg/triangle6.svg")
 ```
 
 will generate the 22 unique shapes used in the classic Blokus Trigon game.  These are all the possible shapes formed from 1 to 6 equilateral triangles.
