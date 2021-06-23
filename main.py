@@ -11,10 +11,12 @@ import time
 def gen_next_level(levelset, b1, is_symmetric=False) -> Set[Blok]:
     unique_blocks = set()
     cntr = 0
+    # if the piece we are adding is symmetric, namely all edges are indistinguiable from one another,
+    # then we only need to attach one edge, there is no need to try all the edges as it would be the same
     if is_symmetric:
-        b1_edges = range(Blok.num_edges(b1))
-    else:
         b1_edges = [0]
+    else:
+        b1_edges = range(Blok.num_edges(b1))
     for b0 in iter(levelset):
         for b0e in range(Blok.num_edges(b0)):
             for b1e in b1_edges:
@@ -36,6 +38,8 @@ def gen_next_level(levelset, b1, is_symmetric=False) -> Set[Blok]:
                     continue
     return unique_blocks
 
+levels_cache = {}
+
 def runn(name, basic, num_levels, svg_file, is_symmetric = False):
     start_time = time.time()
     b0 = Blok(basic)
@@ -45,7 +49,12 @@ def runn(name, basic, num_levels, svg_file, is_symmetric = False):
     all = [(1,b0)]
 
     for lev in range(num_levels-1):
-        curr_level = gen_next_level(prev_level, b1, is_symmetric)
+        cache = levels_cache.get((name,lev), None)
+        if cache:
+            curr_level = cache
+        else:
+            curr_level = gen_next_level(prev_level, b1, is_symmetric)
+            levels_cache[(name,lev)] = curr_level
         for s in iter(curr_level):
             all.append((lev+2,s))
         prev_level = curr_level
