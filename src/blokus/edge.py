@@ -1,6 +1,6 @@
 from __future__ import annotations
 import numpy as np
-from point import Point, distance_between_pts
+from blokus.point import Point, distance_between_pts
 import math
 
 class Edge:

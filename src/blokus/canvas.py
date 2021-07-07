@@ -5,8 +5,8 @@ import numpy as np
 import math
 import sys
 
-from point import Point, calc_angle, rearrange_origin, is_path_clockwise, is_eq_float, get_item, find_shared_pts, diff
-from edge import Edge
+from blokus.point import Point, calc_angle, rearrange_origin, is_path_clockwise, is_eq_float, get_item, find_shared_pts, diff
+from blokus.edge import Edge
 
 class Style():
     def __init__(self, color='black', size=None, dashed=None):

@@ -1,10 +1,8 @@
 from __future__ import annotations
 from typing import Set
-from blokus import Blok, OverlapException
-from blokus import UnequalEdgesException
-
-from canvas import Canvas, CompositeShape, PolygonShape, Style, Box
-from point import Point
+from blokus.blokus import Blok, OverlapException, UnequalEdgesException
+from blokus.canvas import Canvas, CompositeShape, PolygonShape, Style, Box
+from blokus.point import Point
 import math
 import time
 

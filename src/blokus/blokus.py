@@ -4,11 +4,9 @@ from typing import List, Set, Tuple
 import numpy as np
 from functools import reduce
 
-from point import Point, calc_angle, diff, rearrange_origin, is_path_clockwise, is_eq_float, get_item, find_shared_pts, distance_between_pts, center_of_gravity, reorder
-
-from canvas import Shape, Box, PolygonShape, Canvas, Style
-
-from edge import Edge
+from blokus.point import Point, calc_angle, diff, rearrange_origin, is_path_clockwise, is_eq_float, get_item, find_shared_pts, distance_between_pts, center_of_gravity, reorder
+from blokus.canvas import Shape, Box, PolygonShape, Canvas, Style
+from blokus.edge import Edge
 
 class Blok:
     """a Blok is an ordered array of 2D points that describes the polygon outline
