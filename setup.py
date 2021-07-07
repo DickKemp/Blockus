@@ -27,5 +27,6 @@ setup(
     ],
     package_dir={'': 'src'},
     packages=find_packages(where='src'),
+    install_requires=['numpy', 'shapely'],
     python_requires='>=3.6, <4'
 )
