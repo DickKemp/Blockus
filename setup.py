@@ -1,16 +1,16 @@
 from setuptools import setup, find_packages
-import pathlib
+#import pathlib
 
-here = pathlib.Path(__file__).parent.resolve()
+#here = pathlib.Path(__file__).parent.resolve()
 # Get the long description from the README file
-long_description = (here / 'README.md').read_text(encoding='utf-8')
+#long_description = (here / 'README.md').read_text(encoding='utf-8')
 
 setup(
     name='blokus',
     version='0.5.0',
     description='generates shapes in the spirit of blokus',
-    long_description=long_description,
-    long_description_content_type='text/markdown',
+    long_description='generates shapes in the spirit of blokus',
+    # long_description_content_type='text/markdown',
     url='https://github.com/DickKemp/blokus',
     author='Dick Kemp',
     author_email='dickkemp14@gmail.com',
