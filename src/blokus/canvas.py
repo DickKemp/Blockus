@@ -231,7 +231,7 @@ class Canvas():
             mid_pt = s.get_midpoint()
             if s.label:
                 inv_pt = c.viewBoxHeight - mid_pt.y
-                print(f'<text x="{mid_pt.x}" y="{inv_pt}" font-family="Verdana" font-size="0.35">{s.label}</text>', file=file)
+                print(f'<text x="{mid_pt.x}" y="{inv_pt}" font-family="Verdana" font-size="0.15">{s.label}</text>', file=file)
 
             for sh in s.shapes:
                 Canvas.render_shape_as_svg(c, sh, file)
@@ -266,6 +266,6 @@ class Canvas():
             inv_pt = c.viewBoxHeight - pt.y
             points=f"{points}{sep}{float(pt.x*scale)} {float(inv_pt*scale)}"
 
-            size = shape.style.size if shape.style.size else "0.01"
+            size = shape.style.size if shape.style.size else "0.001"
 
         print(f'<polygon points="{points}" fill="none" style="stroke:{shape.style.color};stroke-width:{size}"/>', file=file)
