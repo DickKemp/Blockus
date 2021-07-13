@@ -1,10 +1,10 @@
 import unittest
-from blokus import Blok, Circular, check_if_circular_lists_are_equal
-from point import Point, is_path_clockwise, rearrange_origin
-from edge import Edge
+from blokus.blokus import Blok, Circular, check_if_circular_lists_are_equal
+from blokus.point import Point, is_path_clockwise, rearrange_origin
+from blokus.edge import Edge
 import numpy as np
 import math
-from canvas import Canvas, Shape, Line, Style, Box, PolygonShape, CompositeShape
+from blokus.canvas import Canvas, Shape, Line, Style, Box, PolygonShape, CompositeShape
 
 SQUARE = [Point(0.0,0.0), Point(1.0,0.0), Point(1.0,1.0), Point(0.0,1.0)]
 NP_SQUARE = np.array([[0,0], [1,0], [1,1], [0,1]])
