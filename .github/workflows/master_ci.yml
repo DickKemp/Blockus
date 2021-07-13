@@ -25,6 +25,7 @@ jobs:
       run: |
         pip install numpy
         pip install shapely
+        pip install coverage
         coverage run -m unittest tests/*_test.py
 
     - name: Upload coverage to Codecov
