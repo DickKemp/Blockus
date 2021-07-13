@@ -26,7 +26,7 @@ jobs:
         pip install numpy
         pip install shapely
         pip install coverage
-        coverage run --source=src -m unittest tests/*_test.py
+        coverage run --source=src/blokus -m unittest tests/*_test.py
 
     - name: Upload coverage to Codecov
       uses: codecov/codecov-action@v1
