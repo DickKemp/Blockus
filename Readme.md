@@ -1,5 +1,7 @@
 # Blockus
 
+[![codecov](https://codecov.io/gh/DickKemp/Blockus/branch/master/graph/badge.svg?token=EESRX5JLS0)](https://codecov.io/gh/DickKemp/Blockus)
+
 ## Just generates blocks
 
 ```python
