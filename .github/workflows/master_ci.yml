@@ -27,7 +27,8 @@ jobs:
         pip install numpy
         pip install shapely
         pip install coverage
-        coverage run -m unittest discover -p '*_test.py' -s tests
+        echo "current dir: " `pwd`
+        coverage run -m unittest tests/*_test.py
 
     - name: Upload coverage to Codecov
       uses: codecov/codecov-action@v1
