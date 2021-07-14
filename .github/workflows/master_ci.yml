@@ -1,5 +1,6 @@
 # Docs for the Azure Web Apps Deploy action: https://github.com/Azure/webapps-deploy
 # More GitHub Actions for Azure: https://github.com/Azure/actions
+# coverage run --source=blokus -m unittest ../tests/*_test.py
 
 name: Build and test Python app 
 
@@ -26,8 +27,7 @@ jobs:
         pip install numpy
         pip install shapely
         pip install coverage
-        cd src
-        coverage run --source=blokus -m unittest ../tests/*_test.py
+        coverage run -m unittest discover -p '*_test.py' -s tests
 
     - name: Upload coverage to Codecov
       uses: codecov/codecov-action@v1
